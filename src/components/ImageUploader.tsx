@@ -1,7 +1,6 @@
-
 import React, { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Upload, FileImage, Check, AlertTriangle } from "lucide-react";
+import { Upload, FileImage, Check, AlertTriangle, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
