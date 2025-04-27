@@ -1,8 +1,10 @@
+
 import React, { useState, useCallback } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload, FileImage, Check, AlertTriangle, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { analyzeImage } from "@/utils/imageAnalysis";
 
 interface ImageUploaderProps {
   onImageAnalyzed: (data: any) => void;
@@ -53,33 +55,28 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
     
     reader.onload = async (e) => {
       if (e.target?.result) {
-        setSelectedImage(e.target.result as string);
+        const imageData = e.target.result as string;
+        setSelectedImage(imageData);
         
-        // Simulate AI processing with a timeout
-        setTimeout(() => {
-          setIsLoading(false);
-          
-          // Mock data - in real app would come from AI
-          const mockData = {
-            students: [
-              { name: "Alex Johnson", math: 95, science: 88, english: 92, history: 78 },
-              { name: "Jamie Smith", math: 82, science: 90, english: 85, history: 94 },
-              { name: "Casey Brown", math: 90, science: 85, english: 88, history: 91 },
-              { name: "Taylor Davis", math: 78, science: 92, english: 76, history: 85 },
-              { name: "Jordan Wilson", math: 88, science: 79, english: 94, history: 80 },
-            ],
-            subjects: ["math", "science", "english", "history"],
-            classAverage: 86.5,
-            passPercentage: 100,
-          };
+        try {
+          // Use the real image analysis function
+          const analysisResult = await analyzeImage(imageData);
           
           toast({
             title: "Analysis Complete",
             description: "Mark sheet data has been successfully extracted.",
           });
           
-          onImageAnalyzed(mockData);
-        }, 2000);
+          onImageAnalyzed(analysisResult);
+        } catch (error) {
+          console.error("Image analysis failed:", error);
+          toast({
+            title: "Analysis Failed",
+            description: "Could not extract data from the image. Please try a clearer image.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+        }
       }
     };
     
