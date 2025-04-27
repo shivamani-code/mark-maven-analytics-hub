@@ -7,15 +7,19 @@ import AnalysisOptions, { AnalysisOptionType } from "@/components/AnalysisOption
 import ResultsDisplay from "@/components/ResultsDisplay";
 import CustomQueryInput from "@/components/CustomQueryInput";
 import { ArrowDown } from "lucide-react";
+import { AnalysisResult } from "@/utils/imageAnalysis";
 
 const Index = () => {
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null);
   const [selectedOptions, setSelectedOptions] = useState<AnalysisOptionType[]>([]);
   const [customQuery, setCustomQuery] = useState<string>("");
   const [showCustomQuery, setShowCustomQuery] = useState(false);
 
-  const handleImageAnalyzed = (data: any) => {
+  const handleImageAnalyzed = (data: AnalysisResult) => {
     setAnalysisData(data);
+    // Reset options when a new image is analyzed
+    setSelectedOptions([]);
+    setShowCustomQuery(false);
   };
 
   const handleOptionsSelected = (options: AnalysisOptionType[]) => {
