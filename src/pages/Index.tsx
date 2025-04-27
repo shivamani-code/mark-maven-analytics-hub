@@ -16,6 +16,7 @@ const Index = () => {
   const [showCustomQuery, setShowCustomQuery] = useState(false);
 
   const handleImageAnalyzed = (data: AnalysisResult) => {
+    console.log("Analysis data received:", data);
     setAnalysisData(data);
     // Reset options when a new image is analyzed
     setSelectedOptions([]);
@@ -23,11 +24,13 @@ const Index = () => {
   };
 
   const handleOptionsSelected = (options: AnalysisOptionType[]) => {
+    console.log("Options selected:", options);
     setSelectedOptions(options);
     setShowCustomQuery(options.includes("custom"));
   };
 
   const handleCustomQuery = (query: string) => {
+    console.log("Custom query set:", query);
     setCustomQuery(query);
   };
 

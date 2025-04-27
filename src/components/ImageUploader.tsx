@@ -59,23 +59,27 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
         setSelectedImage(imageData);
         
         try {
-          // Use the real image analysis function
+          // Analyze the image data with our analysis function
           const analysisResult = await analyzeImage(imageData);
+          
+          // Set loading to false after analysis
+          setIsLoading(false);
           
           toast({
             title: "Analysis Complete",
             description: "Mark sheet data has been successfully extracted.",
           });
           
+          // Send the analysis data to the parent component
           onImageAnalyzed(analysisResult);
         } catch (error) {
           console.error("Image analysis failed:", error);
+          setIsLoading(false);
           toast({
             title: "Analysis Failed",
             description: "Could not extract data from the image. Please try a clearer image.",
             variant: "destructive",
           });
-          setIsLoading(false);
         }
       }
     };
