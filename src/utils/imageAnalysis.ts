@@ -14,15 +14,24 @@ export interface AnalysisResult {
   passPercentage: number;
 }
 
+// Cache for previously analyzed images to avoid redundant processing
+const analysisCache = new Map<string, AnalysisResult>();
+
 /**
  * Analyzes a mark sheet image and extracts student data
  * In a real implementation, this would use computer vision AI to extract text and data
  * For now, this is a more advanced mock that uses the image data to "simulate" AI analysis
  */
 export const analyzeImage = async (imageData: string): Promise<AnalysisResult> => {
+  // Check if this image was already analyzed
+  const cacheKey = imageData.substring(0, 100);
+  if (analysisCache.has(cacheKey)) {
+    return analysisCache.get(cacheKey)!;
+  }
+
   // In a real app, this would send the image to an AI service
   return new Promise((resolve, reject) => {
-    // Simulate image processing time
+    // Use setTimeout to simulate asynchronous processing without blocking the main thread
     setTimeout(() => {
       try {
         console.log("Processing image data:", imageData.substring(0, 50) + "...");
@@ -86,19 +95,24 @@ export const analyzeImage = async (imageData: string): Promise<AnalysisResult> =
           passPercentage,
         };
         
+        // Cache the result for future use
+        analysisCache.set(cacheKey, result);
+        
         resolve(result);
       } catch (error) {
         console.error("Error analyzing image:", error);
         reject(error);
       }
-    }, 1500);
+    }, 1000); // Reduced from 1500ms to 1000ms
   });
 };
 
-// Simple function to generate a hash-like number from a string
+// More efficient function to generate a hash-like number from a string
 const generateSimpleHash = (str: string): number => {
   let hash = 0;
-  for (let i = 0; i < Math.min(str.length, 1000); i++) {
+  const strLength = Math.min(str.length, 500); // Process only first 500 chars for performance
+  
+  for (let i = 0; i < strLength; i += 5) { // Sample every 5th character for speed
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Header from "@/components/Header";
 import BackgroundAnimation from "@/components/BackgroundAnimation";
 import ImageUploader from "@/components/ImageUploader";
@@ -15,24 +15,24 @@ const Index = () => {
   const [customQuery, setCustomQuery] = useState<string>("");
   const [showCustomQuery, setShowCustomQuery] = useState(false);
 
-  const handleImageAnalyzed = (data: AnalysisResult) => {
+  const handleImageAnalyzed = useCallback((data: AnalysisResult) => {
     console.log("Analysis data received:", data);
     setAnalysisData(data);
     // Reset options when a new image is analyzed
     setSelectedOptions([]);
     setShowCustomQuery(false);
-  };
+  }, []);
 
-  const handleOptionsSelected = (options: AnalysisOptionType[]) => {
+  const handleOptionsSelected = useCallback((options: AnalysisOptionType[]) => {
     console.log("Options selected:", options);
     setSelectedOptions(options);
     setShowCustomQuery(options.includes("custom"));
-  };
+  }, []);
 
-  const handleCustomQuery = (query: string) => {
+  const handleCustomQuery = useCallback((query: string) => {
     console.log("Custom query set:", query);
     setCustomQuery(query);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen pb-16">

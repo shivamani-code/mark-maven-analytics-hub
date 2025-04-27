@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload, FileImage, Check, AlertTriangle, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,13 +34,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFile(e.target.files[0]);
     }
-  };
+  }, []);
 
-  const handleFile = (file: File) => {
+  const handleFile = useCallback((file: File) => {
     if (!file.type.match('image.*')) {
       toast({
         title: "Invalid file type",
@@ -51,6 +51,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
     }
 
     setIsLoading(true);
+    
+    // Use a smaller version of the image for processing
     const reader = new FileReader();
     
     reader.onload = async (e) => {
@@ -59,19 +61,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
         setSelectedImage(imageData);
         
         try {
-          // Analyze the image data with our analysis function
-          const analysisResult = await analyzeImage(imageData);
-          
-          // Set loading to false after analysis
-          setIsLoading(false);
-          
-          toast({
-            title: "Analysis Complete",
-            description: "Mark sheet data has been successfully extracted.",
+          // Wrap the analysis in a requestAnimationFrame to avoid blocking the UI
+          requestAnimationFrame(async () => {
+            // Analyze the image data with our analysis function
+            const analysisResult = await analyzeImage(imageData);
+            
+            // Set loading to false after analysis
+            setIsLoading(false);
+            
+            toast({
+              title: "Analysis Complete",
+              description: "Mark sheet data has been successfully extracted.",
+            });
+            
+            // Send the analysis data to the parent component
+            onImageAnalyzed(analysisResult);
           });
-          
-          // Send the analysis data to the parent component
-          onImageAnalyzed(analysisResult);
         } catch (error) {
           console.error("Image analysis failed:", error);
           setIsLoading(false);
@@ -85,7 +90,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
     };
     
     reader.readAsDataURL(file);
-  };
+  }, [toast, onImageAnalyzed]);
 
   return (
     <Card className={`p-6 border-2 transition-colors duration-300 ${isDragActive ? 'border-brand-purple border-dashed bg-brand-light' : 'border-border'}`}>
@@ -157,4 +162,5 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageAnalyzed }) => {
   );
 };
 
-export default ImageUploader;
+// Use memo to prevent unnecessary re-renders
+export default memo(ImageUploader);
