@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -20,7 +19,7 @@ import {
   ChartPie,
   ChevronDown,
   ChevronUp,
-  FilePdf
+  File
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { AnalysisOptionType } from "./AnalysisOptions";
@@ -36,7 +35,6 @@ interface ResultsDisplayProps {
   customQuery?: string;
 }
 
-// Define colors for charts
 const COLORS = ['#8B5CF6', '#D946EF', '#0EA5E9', '#F97316', '#10B981', '#6366F1'];
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, customQuery }) => {
@@ -48,14 +46,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
   const studentsPerPage = 10;
   const totalStudentPages = Math.ceil(data.students.length / studentsPerPage);
 
-  // Get paginated students data
   const getPaginatedStudents = () => {
     const startIndex = (currentStudentPage - 1) * studentsPerPage;
     const endIndex = startIndex + studentsPerPage;
     return data.students.slice(startIndex, endIndex);
   };
 
-  // Format data based on selected option
   const getOptionData = (option: AnalysisOptionType) => {
     switch (option) {
       case 'topperList':
@@ -76,13 +72,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
     }
   };
 
-  // Filter toppers based on expand state
   const getDisplayedToppers = () => {
     const allToppers = generateTopperList(data);
     return expandToppers ? allToppers : allToppers.slice(0, 10);
   };
 
-  // Handle which chart/table to render based on selected option
   const renderContent = (option: AnalysisOptionType, format: string) => {
     const optionData = getOptionData(option);
     
@@ -125,7 +119,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </ResponsiveContainer>
         );
       } else if (option === 'averageMarks') {
-        // For the renamed "All Students Performance" option, show a bar chart of all students by total marks
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={optionData.slice(0, 15)}>
@@ -140,7 +133,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </ResponsiveContainer>
         );
       } else if (option === 'topperList') {
-        const displayedToppers = getDisplayedToppers().slice(0, 15); // Display up to 15 in the chart
+        const displayedToppers = getDisplayedToppers().slice(0, 15);
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={displayedToppers}>
@@ -219,7 +212,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </>
         );
       } else if (option === 'averageMarks') {
-        // For the renamed "All Students Performance" option, show a table with all students' marks and percentages
         return (
           <Table>
             <TableHeader>
@@ -268,7 +260,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
       }
     }
     
-    // Default text format for any option
     return (
       <div className="p-4 whitespace-pre-wrap bg-muted/30 rounded-md">
         {JSON.stringify(optionData, null, 2)}
@@ -276,7 +267,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
     );
   };
 
-  // Add the All Students component
   const renderAllStudents = () => {
     const paginatedStudents = getPaginatedStudents();
     
@@ -431,7 +421,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
               onClick={() => handleExport('all-pdf-tables')}
               className="bg-gradient-to-r from-brand-purple/20 to-brand-magenta/20"
             >
-              <FilePdf className="h-4 w-4 mr-2" /> All Tables PDF
+              <File className="h-4 w-4 mr-2" /> All Tables PDF
             </Button>
           </div>
         </div>
@@ -472,7 +462,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </div>
         ))}
         
-        {/* Always show All Students section */}
         {renderAllStudents()}
 
         <div className="flex flex-wrap gap-2 justify-end mt-8">
