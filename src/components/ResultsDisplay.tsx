@@ -18,16 +18,16 @@ import {
   FileSpreadsheet, 
   Download, 
   ChartPie,
-  Users,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FilePdf
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { AnalysisOptionType } from "./AnalysisOptions";
 import { AnalysisResult } from "@/utils/imageAnalysis";
-import { exportAsPDF, exportAsExcel, exportAllData } from "@/utils/exportUtils";
+import { exportAsPDF, exportAsExcel, exportAllData, exportAllDataAsPDF } from "@/utils/exportUtils";
 import { useToast } from "@/hooks/use-toast";
-import { generateTopperList, generateAverageMarks, generateSubjectToppers } from "@/utils/dataFormatting";
+import { generateTopperList, generateAverageMarks, generateSubjectToppers, generateAllStudentsStats } from "@/utils/dataFormatting";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 interface ResultsDisplayProps {
@@ -48,81 +48,6 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
   const studentsPerPage = 10;
   const totalStudentPages = Math.ceil(data.students.length / studentsPerPage);
 
-  // Convert data for average marks chart
-  const getAverageChart = () => {
-    const subjects = data.subjects || [];
-    const students = data.students || [];
-    
-    // Calculate average for each subject
-    const subjectAverages = subjects.map(subject => {
-      const total = students.reduce((sum, student) => sum + (student[subject] as number), 0);
-      return {
-        subject,
-        average: parseFloat((total / students.length).toFixed(1))
-      };
-    });
-    
-    return subjectAverages;
-  };
-
-  // Convert data for toppers chart
-  const getToppersChart = () => {
-    const students = data.students || [];
-    return students
-      .map(student => {
-        // Calculate total marks and percentage
-        const total = Object.keys(student)
-          .filter(key => key !== 'name')
-          .reduce((sum, subject) => sum + (student[subject] as number), 0);
-        
-        const maxPossibleMarks = Object.keys(student).filter(key => key !== 'name').length * 50; // Assuming each subject is out of 50
-        const percentage = (total / maxPossibleMarks) * 100;
-        
-        return {
-          name: student.name,
-          total,
-          percentage: parseFloat(percentage.toFixed(1))
-        };
-      })
-      .sort((a, b) => b.total - a.total);
-  };
-
-  // Filter toppers based on expand state
-  const getDisplayedToppers = () => {
-    const allToppers = getToppersChart();
-    return expandToppers ? allToppers : allToppers.slice(0, 10);
-  };
-
-  // Generate pie chart data for pass percentage
-  const getPassPercentageChart = () => {
-    const students = data.students || [];
-    const passCount = students.length * (data.passPercentage / 100);
-    const failCount = students.length - passCount;
-    
-    return [
-      { name: 'Pass', value: passCount },
-      { name: 'Fail', value: failCount }
-    ];
-  };
-
-  // Generate data for subject-wise toppers
-  const getSubjectToppers = () => {
-    const subjects = data.subjects || [];
-    const students = data.students || [];
-    
-    return subjects.map(subject => {
-      const topStudent = [...students].sort((a, b) => 
-        ((b[subject] as number) || 0) - ((a[subject] as number) || 0)
-      )[0];
-      return {
-        subject,
-        topperName: topStudent.name,
-        marks: topStudent[subject],
-        percentage: parseFloat((((topStudent[subject] as number) / 50) * 100).toFixed(1)) // Assuming each subject is out of 50
-      };
-    });
-  };
-
   // Get paginated students data
   const getPaginatedStudents = () => {
     const startIndex = (currentStudentPage - 1) * studentsPerPage;
@@ -130,33 +55,31 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
     return data.students.slice(startIndex, endIndex);
   };
 
-  // Calculate student total marks and percentage
-  const calculateStudentStats = (student) => {
-    const subjects = data.subjects;
-    const totalMarks = subjects.reduce((sum, subject) => sum + (student[subject] as number), 0);
-    const maxPossible = subjects.length * 50; // Assuming each subject is out of 50
-    const percentage = (totalMarks / maxPossible) * 100;
-    
-    return {
-      totalMarks,
-      percentage: parseFloat(percentage.toFixed(1))
-    };
-  };
-
   // Format data based on selected option
   const getOptionData = (option: AnalysisOptionType) => {
     switch (option) {
       case 'topperList':
-        return getDisplayedToppers();
+        return generateTopperList(data);
       case 'averageMarks':
-        return getAverageChart();
+        return generateAllStudentsStats(data);
       case 'subjectToppers':
-        return getSubjectToppers();
+        return generateSubjectToppers(data);
       case 'passPercentage':
-        return getPassPercentageChart();
+        const passCount = data.students.length * (data.passPercentage / 100);
+        const failCount = data.students.length - passCount;
+        return [
+          { name: 'Pass', value: passCount },
+          { name: 'Fail', value: failCount }
+        ];
       default:
         return [];
     }
+  };
+
+  // Filter toppers based on expand state
+  const getDisplayedToppers = () => {
+    const allToppers = generateTopperList(data);
+    return expandToppers ? allToppers : allToppers.slice(0, 10);
   };
 
   // Handle which chart/table to render based on selected option
@@ -202,15 +125,17 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </ResponsiveContainer>
         );
       } else if (option === 'averageMarks') {
+        // For the renamed "All Students Performance" option, show a bar chart of all students by total marks
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={optionData}>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={optionData.slice(0, 15)}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="subject" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
               <YAxis />
               <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
               <Legend />
-              <Bar name="Average Score" dataKey="average" fill="#8B5CF6" />
+              <Bar name="Total Marks" dataKey="totalMarks" fill="#0EA5E9" />
+              <Bar name="Percentage" dataKey="percentage" fill="#F97316" />
             </BarChart>
           </ResponsiveContainer>
         );
@@ -221,12 +146,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             <BarChart data={displayedToppers}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
-              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-              <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+              <YAxis />
               <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
               <Legend />
-              <Bar yAxisId="left" name="Total Marks" dataKey="total" fill="#8884d8" />
-              <Bar yAxisId="right" name="Percentage" dataKey="percentage" fill="#82ca9d" />
+              <Bar name="Total Marks" dataKey="total" fill="#8884d8" />
             </BarChart>
           </ResponsiveContainer>
         );
@@ -296,21 +219,24 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </>
         );
       } else if (option === 'averageMarks') {
+        // For the renamed "All Students Performance" option, show a table with all students' marks and percentages
         return (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Subject</TableHead>
-                <TableHead>Average Score</TableHead>
+                <TableHead>Rank</TableHead>
+                <TableHead>Student Name</TableHead>
+                <TableHead>Total Marks</TableHead>
                 <TableHead>Percentage</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {optionData.map((item, index) => (
                 <TableRow key={index}>
-                  <TableCell className="font-medium">{item.subject}</TableCell>
-                  <TableCell>{item.average}</TableCell>
-                  <TableCell>{((item.average / 50) * 100).toFixed(1)}%</TableCell>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{item.totalMarks}</TableCell>
+                  <TableCell>{item.percentage}%</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -373,15 +299,15 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
               </TableHeader>
               <TableBody>
                 {paginatedStudents.map((student, index) => {
-                  const stats = calculateStudentStats(student);
+                  const stats = generateAllStudentsStats(data).find(s => s.name === student.name);
                   return (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{student.name}</TableCell>
                       {data.subjects.map(subject => (
                         <TableCell key={subject}>{student[subject]}</TableCell>
                       ))}
-                      <TableCell className="font-bold">{stats.totalMarks}</TableCell>
-                      <TableCell>{stats.percentage}%</TableCell>
+                      <TableCell className="font-bold">{stats?.totalMarks}</TableCell>
+                      <TableCell>{stats?.percentage}%</TableCell>
                     </TableRow>
                   );
                 })}
@@ -444,6 +370,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           title: "Complete Export",
           description: "Your complete analysis has been downloaded as a text file.",
         });
+      } else if (format === 'all-pdf-tables') {
+        exportAllDataAsPDF(data, selectedOptions, customQuery);
+        toast({
+          title: "Comprehensive PDF Export",
+          description: "Your comprehensive analysis with tables has been downloaded.",
+        });
       }
     } catch (error) {
       console.error("Export error:", error);
@@ -465,7 +397,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
       </div>
 
       <Tabs defaultValue="chart" value={activeFormat} onValueChange={setActiveFormat}>
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <TabsList className="bg-muted/50">
             <TabsTrigger value="chart" className="data-[state=active]:bg-white">
               <ChartBarIcon className="h-4 w-4 mr-2" /> Charts
@@ -478,7 +410,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             </TabsTrigger>
           </TabsList>
           
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
               size="sm" 
@@ -493,6 +425,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             >
               <FileSpreadsheet className="h-4 w-4 mr-2" /> Excel
             </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleExport('all-pdf-tables')}
+              className="bg-gradient-to-r from-brand-purple/20 to-brand-magenta/20"
+            >
+              <FilePdf className="h-4 w-4 mr-2" /> All Tables PDF
+            </Button>
           </div>
         </div>
 
@@ -500,7 +440,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           <div key={option} className="mb-8">
             <h3 className="text-xl font-semibold mb-4 text-gradient-brand">
               {option === 'topperList' && 'Topper List'}
-              {option === 'averageMarks' && 'Average Marks'}
+              {option === 'averageMarks' && 'All Students Performance'}
               {option === 'subjectToppers' && 'Subject-wise Toppers'}
               {option === 'passPercentage' && 'Pass Percentage'}
               {option === 'custom' && 'Custom Query Results'}
@@ -535,12 +475,19 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
         {/* Always show All Students section */}
         {renderAllStudents()}
 
-        <div className="flex justify-end mt-4">
+        <div className="flex flex-wrap gap-2 justify-end mt-8">
           <Button 
+            variant="outline"
             onClick={() => handleExport('all')} 
+            className="bg-gradient-to-r from-brand-purple/10 to-brand-magenta/10"
+          >
+            <FileText className="h-4 w-4 mr-2" /> Download Text Report
+          </Button>
+          <Button 
+            onClick={() => handleExport('all-pdf-tables')} 
             className="bg-gradient-brand hover:opacity-90"
           >
-            <Download className="h-4 w-4 mr-2" /> Download All Results
+            <Download className="h-4 w-4 mr-2" /> Download Complete Tables
           </Button>
         </div>
       </Tabs>

@@ -15,6 +15,13 @@ export interface SubjectTopperResult {
   percentage: number;
 }
 
+export interface StudentStatsResult {
+  name: string;
+  subjects: Record<string, number>;
+  totalMarks: number;
+  percentage: number;
+}
+
 export const generateTopperList = (data: AnalysisResult): TopperListResult[] => {
   return data.students
     .map(student => {
@@ -75,4 +82,24 @@ export const calculateStudentStats = (student: Student, subjects: string[]): { t
     totalMarks,
     percentage: parseFloat(percentage.toFixed(1))
   };
+};
+
+// Generate comprehensive student statistics for all students
+export const generateAllStudentsStats = (data: AnalysisResult): StudentStatsResult[] => {
+  return data.students.map(student => {
+    const stats = calculateStudentStats(student, data.subjects);
+    
+    // Create a subjects record from the student object
+    const subjectData: Record<string, number> = {};
+    data.subjects.forEach(subject => {
+      subjectData[subject] = student[subject] as number;
+    });
+    
+    return {
+      name: student.name as string,
+      subjects: subjectData,
+      totalMarks: stats.totalMarks,
+      percentage: stats.percentage
+    };
+  }).sort((a, b) => b.totalMarks - a.totalMarks); // Sort by total marks
 };

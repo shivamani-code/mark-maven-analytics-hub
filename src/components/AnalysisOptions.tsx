@@ -35,13 +35,13 @@ const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ onOptionsSelected, on
       id: "topperList",
       label: "Topper List",
       icon: <Trophy className="h-5 w-5 text-yellow-500" />,
-      description: "Find the top performing students across all subjects"
+      description: "Rank all students by their total marks across all subjects"
     },
     {
       id: "averageMarks",
-      label: "Average Marks",
+      label: "All Students Performance",
       icon: <Calculator className="h-5 w-5 text-blue-500" />,
-      description: "Calculate average marks across all students and subjects"
+      description: "View all students' marks with totals and percentages"
     },
     {
       id: "subjectToppers",

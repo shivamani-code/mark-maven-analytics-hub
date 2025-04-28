@@ -1,7 +1,13 @@
 
 import { AnalysisResult } from "./imageAnalysis";
 import { AnalysisOptionType } from "@/components/AnalysisOptions";
-import { generateTopperList, generateAverageMarks, generateSubjectToppers, calculateStudentStats } from "./dataFormatting";
+import { 
+  generateTopperList, 
+  generateAverageMarks, 
+  generateSubjectToppers, 
+  calculateStudentStats,
+  generateAllStudentsStats
+} from "./dataFormatting";
 
 // Function to export data as PDF
 export const exportAsPDF = (data: AnalysisResult, selectedOptions: AnalysisOptionType[], customQuery?: string) => {
@@ -76,6 +82,10 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
   content += `Pass Percentage: ${data.passPercentage}%\n\n`;
   
   // Add selected analyses
+  if (selectedOptions.length > 0) {
+    content += 'SELECTED ANALYSES:\n\n';
+  }
+  
   selectedOptions.forEach(option => {
     switch (option) {
       case 'topperList':
@@ -83,17 +93,17 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
         content += 'TOPPER LIST:\n';
         content += '-----------------\n';
         toppers.forEach((student, index) => {
-          content += `${index + 1}. ${student.name}: ${student.total} (${student.average.toFixed(2)} average, ${student.percentage}%)\n`;
+          content += `${index + 1}. ${student.name}: ${student.total} marks (${student.percentage}%)\n`;
         });
         content += '\n';
         break;
         
       case 'averageMarks':
-        const averages = generateAverageMarks(data);
-        content += 'AVERAGE MARKS BY SUBJECT:\n';
+        const studentStats = generateAllStudentsStats(data);
+        content += 'ALL STUDENTS MARKS & PERCENTAGES:\n';
         content += '-----------------\n';
-        averages.forEach(item => {
-          content += `${item.subject}: ${item.average.toFixed(2)} (${item.percentage}%)\n`;
+        studentStats.forEach((student, index) => {
+          content += `${index + 1}. ${student.name}: ${student.totalMarks} marks (${student.percentage}%)\n`;
         });
         content += '\n';
         break;
@@ -161,6 +171,120 @@ export const exportAllData = (data: AnalysisResult, selectedOptions: AnalysisOpt
   const link = document.createElement('a');
   link.href = url;
   link.download = 'complete-mark-sheet-analysis.txt';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+// New function to export all data as a PDF with tables
+export const exportAllDataAsPDF = (data: AnalysisResult, selectedOptions: AnalysisOptionType[], customQuery?: string) => {
+  // In a real implementation, we would use a proper PDF library like jsPDF
+  // with auto-table plugin to generate actual tables
+  // For this demo, we'll create a structured text file that mimics table format
+  
+  let content = "==========================================\n";
+  content += "           COMPREHENSIVE ANALYSIS REPORT           \n";
+  content += "==========================================\n\n";
+  
+  // Add class summary
+  content += "CLASS SUMMARY:\n";
+  content += "----------------\n";
+  content += `Class Average: ${data.classAverage}\n`;
+  content += `Pass Percentage: ${data.passPercentage}%\n\n`;
+  
+  // Add all selected analyses in table format
+  selectedOptions.forEach(option => {
+    switch (option) {
+      case 'topperList':
+        const toppers = generateTopperList(data);
+        content += "TOPPER LIST:\n";
+        content += "----------------\n";
+        content += "Rank | Name | Total Marks | Percentage\n";
+        content += "----------------------------------------\n";
+        toppers.forEach((student, index) => {
+          content += `${index + 1} | ${student.name} | ${student.total} | ${student.percentage}%\n`;
+        });
+        content += "\n\n";
+        break;
+        
+      case 'averageMarks':
+        const studentStats = generateAllStudentsStats(data);
+        content += "ALL STUDENTS MARKS & PERCENTAGES:\n";
+        content += "----------------\n";
+        content += "Rank | Name | Total Marks | Percentage\n";
+        content += "----------------------------------------\n";
+        studentStats.forEach((student, index) => {
+          content += `${index + 1} | ${student.name} | ${student.totalMarks} | ${student.percentage}%\n`;
+        });
+        content += "\n\n";
+        break;
+        
+      case 'subjectToppers':
+        const subjectToppers = generateSubjectToppers(data);
+        content += "SUBJECT-WISE TOPPERS:\n";
+        content += "----------------\n";
+        content += "Subject | Topper Name | Marks | Percentage\n";
+        content += "----------------------------------------\n";
+        subjectToppers.forEach(item => {
+          content += `${item.subject} | ${item.topperName} | ${item.marks} | ${item.percentage}%\n`;
+        });
+        content += "\n\n";
+        break;
+        
+      case 'passPercentage':
+        content += "PASS PERCENTAGE:\n";
+        content += "----------------\n";
+        content += "Status | Count | Percentage\n";
+        content += "----------------------------------------\n";
+        const passCount = Math.round(data.students.length * (data.passPercentage / 100));
+        const failCount = data.students.length - passCount;
+        content += `Pass | ${passCount} | ${data.passPercentage}%\n`;
+        content += `Fail | ${failCount} | ${(100 - data.passPercentage).toFixed(1)}%\n\n\n`;
+        break;
+        
+      case 'custom':
+        if (customQuery) {
+          content += "CUSTOM QUERY RESULTS:\n";
+          content += "----------------\n";
+          content += `Query: "${customQuery}"\n`;
+          content += "In a production app, this would include the AI-generated response to your query.\n\n\n";
+        }
+        break;
+    }
+  });
+  
+  // Always add complete student data table
+  content += "COMPLETE STUDENT DATA:\n";
+  content += "----------------\n";
+  
+  // Create header row with proper spacing for table-like format
+  let headerRow = "Name";
+  data.subjects.forEach(subject => {
+    headerRow += ` | ${subject}`;
+  });
+  headerRow += " | Total | Percentage";
+  content += headerRow + "\n";
+  content += "-".repeat(headerRow.length) + "\n";
+  
+  // Add each student's data
+  data.students.forEach(student => {
+    const stats = calculateStudentStats(student, data.subjects);
+    
+    let row = student.name as string;
+    data.subjects.forEach(subject => {
+      row += ` | ${student[subject]}`;
+    });
+    row += ` | ${stats.totalMarks} | ${stats.percentage}%`;
+    content += row + "\n";
+  });
+  
+  // Create a Blob and download it with a .pdf extension
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'comprehensive-tables-analysis.pdf';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
