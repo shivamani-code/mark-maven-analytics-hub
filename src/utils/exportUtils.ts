@@ -1,7 +1,7 @@
 
 import { AnalysisResult } from "./imageAnalysis";
 import { AnalysisOptionType } from "@/components/AnalysisOptions";
-import { generateTopperList, generateAverageMarks, generateSubjectToppers } from "./dataFormatting";
+import { generateTopperList, generateAverageMarks, generateSubjectToppers, calculateStudentStats } from "./dataFormatting";
 
 // Function to export data as PDF
 export const exportAsPDF = (data: AnalysisResult, selectedOptions: AnalysisOptionType[], customQuery?: string) => {
@@ -39,14 +39,18 @@ export const exportAsExcel = (data: AnalysisResult, selectedOptions: AnalysisOpt
   content += 'Student Data:\n';
   
   // Add headers for student table
-  const headers = ['Name', ...data.subjects];
+  const headers = ['Name', ...data.subjects, 'Total', 'Percentage'];
   content += headers.join(',') + '\n';
   
   // Add data for each student
   data.students.forEach(student => {
+    const stats = calculateStudentStats(student, data.subjects);
+    
     const row = [
       student.name,
-      ...data.subjects.map(subject => student[subject])
+      ...data.subjects.map(subject => student[subject]),
+      stats.totalMarks,
+      `${stats.percentage}%`
     ];
     content += row.join(',') + '\n';
   });
@@ -75,11 +79,11 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
   selectedOptions.forEach(option => {
     switch (option) {
       case 'topperList':
-        const toppers = generateTopperList(data).slice(0, 5);
+        const toppers = generateTopperList(data);
         content += 'TOPPER LIST:\n';
         content += '-----------------\n';
         toppers.forEach((student, index) => {
-          content += `${index + 1}. ${student.name}: ${student.total} (${student.average.toFixed(2)} average)\n`;
+          content += `${index + 1}. ${student.name}: ${student.total} (${student.average.toFixed(2)} average, ${student.percentage}%)\n`;
         });
         content += '\n';
         break;
@@ -89,7 +93,7 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
         content += 'AVERAGE MARKS BY SUBJECT:\n';
         content += '-----------------\n';
         averages.forEach(item => {
-          content += `${item.subject}: ${item.average.toFixed(2)}\n`;
+          content += `${item.subject}: ${item.average.toFixed(2)} (${item.percentage}%)\n`;
         });
         content += '\n';
         break;
@@ -99,7 +103,7 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
         content += 'SUBJECT-WISE TOPPERS:\n';
         content += '-----------------\n';
         subjectToppers.forEach(item => {
-          content += `${item.subject}: ${item.topperName} (${item.marks})\n`;
+          content += `${item.subject}: ${item.topperName} (${item.marks}, ${item.percentage}%)\n`;
         });
         content += '\n';
         break;
@@ -128,14 +132,18 @@ const generateTextContent = (data: AnalysisResult, selectedOptions: AnalysisOpti
   data.subjects.forEach(subject => {
     headerRow += `\t${subject}`;
   });
+  headerRow += '\tTotal\tPercentage';
   content += headerRow + '\n';
   
-  // Add each student's data
+  // Add each student's data with total and percentage
   data.students.forEach(student => {
+    const stats = calculateStudentStats(student, data.subjects);
+    
     let row = student.name;
     data.subjects.forEach(subject => {
       row += `\t${student[subject]}`;
     });
+    row += `\t${stats.totalMarks}\t${stats.percentage}%`;
     content += row + '\n';
   });
   

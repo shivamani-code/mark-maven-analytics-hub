@@ -34,10 +34,35 @@ const Index = () => {
     setCustomQuery(query);
   }, []);
 
-  // Memoize the ImageUploader component to prevent unnecessary re-renders
+  // Memoize components to prevent unnecessary re-renders
   const memoizedImageUploader = useMemo(() => (
     <ImageUploader onImageAnalyzed={handleImageAnalyzed} />
   ), [handleImageAnalyzed]);
+
+  const memoizedAnalysisOptions = useMemo(() => (
+    analysisData && (
+      <AnalysisOptions 
+        onOptionsSelected={handleOptionsSelected}
+        onCustomQuery={handleCustomQuery}
+      />
+    )
+  ), [analysisData, handleOptionsSelected, handleCustomQuery]);
+
+  const memoizedCustomQueryInput = useMemo(() => (
+    showCustomQuery && (
+      <CustomQueryInput onSubmitQuery={handleCustomQuery} />
+    )
+  ), [showCustomQuery, handleCustomQuery]);
+
+  const memoizedResultsDisplay = useMemo(() => (
+    analysisData && selectedOptions.length > 0 && (
+      <ResultsDisplay 
+        data={analysisData} 
+        selectedOptions={selectedOptions}
+        customQuery={customQuery}
+      />
+    )
+  ), [analysisData, selectedOptions, customQuery]);
 
   return (
     <div className="min-h-screen pb-16">
@@ -56,24 +81,9 @@ const Index = () => {
           </div>
         )}
         
-        {analysisData && (
-          <AnalysisOptions 
-            onOptionsSelected={handleOptionsSelected}
-            onCustomQuery={handleCustomQuery}
-          />
-        )}
-        
-        {showCustomQuery && (
-          <CustomQueryInput onSubmitQuery={handleCustomQuery} />
-        )}
-        
-        {analysisData && selectedOptions.length > 0 && (
-          <ResultsDisplay 
-            data={analysisData} 
-            selectedOptions={selectedOptions}
-            customQuery={customQuery}
-          />
-        )}
+        {memoizedAnalysisOptions}
+        {memoizedCustomQueryInput}
+        {memoizedResultsDisplay}
       </main>
     </div>
   );
