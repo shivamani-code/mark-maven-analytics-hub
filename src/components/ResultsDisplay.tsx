@@ -21,9 +21,13 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { AnalysisOptionType } from "./AnalysisOptions";
+import { AnalysisResult } from "@/utils/imageAnalysis";
+import { exportAsPDF, exportAsExcel, exportAllData } from "@/utils/exportUtils";
+import { useToast } from "@/hooks/use-toast";
+import { generateTopperList, generateAverageMarks, generateSubjectToppers } from "@/utils/dataFormatting";
 
 interface ResultsDisplayProps {
-  data: any;
+  data: AnalysisResult;
   selectedOptions: AnalysisOptionType[];
   customQuery?: string;
 }
@@ -33,6 +37,7 @@ const COLORS = ['#8B5CF6', '#D946EF', '#0EA5E9', '#F97316', '#10B981', '#6366F1'
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, customQuery }) => {
   const [activeFormat, setActiveFormat] = useState("chart");
+  const { toast } = useToast();
 
   // Convert data for average marks chart
   const getAverageChart = () => {
@@ -41,7 +46,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
     
     // Calculate average for each subject
     const subjectAverages = subjects.map(subject => {
-      const total = students.reduce((sum, student) => sum + student[subject], 0);
+      const total = students.reduce((sum, student) => sum + (student[subject] as number), 0);
       return {
         subject,
         average: parseFloat((total / students.length).toFixed(1))
@@ -59,7 +64,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
         name: student.name,
         total: Object.keys(student)
           .filter(key => key !== 'name')
-          .reduce((sum, subject) => sum + student[subject], 0)
+          .reduce((sum, subject) => sum + (student[subject] as number), 0)
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
@@ -83,7 +88,9 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
     const students = data.students || [];
     
     return subjects.map(subject => {
-      const topStudent = [...students].sort((a, b) => b[subject] - a[subject])[0];
+      const topStudent = [...students].sort((a, b) => 
+        ((b[subject] as number) || 0) - ((a[subject] as number) || 0)
+      )[0];
       return {
         subject,
         topperName: topStudent.name,
@@ -261,8 +268,34 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
   };
 
   const handleExport = (format: string) => {
-    // In a real app, this would generate and trigger download of the file
-    console.log(`Exporting in ${format} format`);
+    try {
+      if (format === 'pdf') {
+        exportAsPDF(data, selectedOptions, customQuery);
+        toast({
+          title: "PDF Export",
+          description: "Your analysis has been downloaded as a PDF file.",
+        });
+      } else if (format === 'excel') {
+        exportAsExcel(data, selectedOptions, customQuery);
+        toast({
+          title: "Excel Export",
+          description: "Your analysis has been downloaded as a CSV file.",
+        });
+      } else if (format === 'all') {
+        exportAllData(data, selectedOptions, customQuery);
+        toast({
+          title: "Complete Export",
+          description: "Your complete analysis has been downloaded as a text file.",
+        });
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "There was a problem exporting your data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -289,10 +322,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
           </TabsList>
           
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport('pdf')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleExport('pdf')}
+            >
               <FileText className="h-4 w-4 mr-2" /> PDF
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport('excel')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleExport('excel')}
+            >
               <FileSpreadsheet className="h-4 w-4 mr-2" /> Excel
             </Button>
           </div>
@@ -335,7 +376,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
         ))}
 
         <div className="flex justify-end mt-4">
-          <Button onClick={() => handleExport('all')} className="bg-gradient-brand hover:opacity-90">
+          <Button 
+            onClick={() => handleExport('all')} 
+            className="bg-gradient-brand hover:opacity-90"
+          >
             <Download className="h-4 w-4 mr-2" /> Download All Results
           </Button>
         </div>

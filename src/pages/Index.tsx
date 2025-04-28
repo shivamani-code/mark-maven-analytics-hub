@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import Header from "@/components/Header";
 import BackgroundAnimation from "@/components/BackgroundAnimation";
 import ImageUploader from "@/components/ImageUploader";
@@ -34,6 +34,11 @@ const Index = () => {
     setCustomQuery(query);
   }, []);
 
+  // Memoize the ImageUploader component to prevent unnecessary re-renders
+  const memoizedImageUploader = useMemo(() => (
+    <ImageUploader onImageAnalyzed={handleImageAnalyzed} />
+  ), [handleImageAnalyzed]);
+
   return (
     <div className="min-h-screen pb-16">
       <BackgroundAnimation />
@@ -41,7 +46,7 @@ const Index = () => {
       <Header />
       
       <main className="container px-4 sm:px-6 max-w-4xl mx-auto space-y-8">
-        <ImageUploader onImageAnalyzed={handleImageAnalyzed} />
+        {memoizedImageUploader}
         
         {analysisData && (
           <div className="flex justify-center">
