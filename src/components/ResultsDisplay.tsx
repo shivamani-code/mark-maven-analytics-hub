@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, 
@@ -61,7 +62,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
       case 'subjectToppers':
         return generateSubjectToppers(data);
       case 'passPercentage':
-        const passCount = data.students.length * (data.passPercentage / 100);
+        const passCount = Math.round(data.students.length * (data.passPercentage / 100));
         const failCount = data.students.length - passCount;
         return [
           { name: 'Pass', value: passCount },
@@ -99,7 +100,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => [`${value} students`, null]} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -110,7 +111,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             <BarChart data={optionData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="subject" />
-              <YAxis />
+              <YAxis domain={[0, 50]} />
               <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
               <Legend />
               <Bar name="Marks" dataKey="marks" fill="#8B5CF6" />
@@ -124,7 +125,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             <BarChart data={optionData.slice(0, 15)}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
-              <YAxis />
+              <YAxis domain={[0, 'dataMax + 10']} />
               <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
               <Legend />
               <Bar name="Total Marks" dataKey="totalMarks" fill="#0EA5E9" />
@@ -139,16 +140,23 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             <BarChart data={displayedToppers}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
-              <YAxis />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
+              <YAxis domain={[0, 'dataMax + 10']} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} 
+                formatter={(value, name) => [`${value}`, name === "percentage" ? "Percentage" : "Total Marks"]}
+              />
               <Legend />
               <Bar name="Total Marks" dataKey="total" fill="#8884d8" />
+              <Bar name="Percentage" dataKey="percentage" fill="#82ca9d" />
             </BarChart>
           </ResponsiveContainer>
         );
       }
     } else if (format === 'table') {
       if (option === 'passPercentage') {
+        const passCount = Math.round(data.students.length * (data.passPercentage / 100));
+        const failCount = data.students.length - passCount;
+        
         return (
           <Table>
             <TableHeader>
@@ -159,13 +167,16 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {optionData.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.value}</TableCell>
-                  <TableCell>{((item.value / data.students.length) * 100).toFixed(1)}%</TableCell>
-                </TableRow>
-              ))}
+              <TableRow>
+                <TableCell className="font-medium">Pass</TableCell>
+                <TableCell>{passCount}</TableCell>
+                <TableCell>{data.passPercentage}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Fail</TableCell>
+                <TableCell>{failCount}</TableCell>
+                <TableCell>{(100 - data.passPercentage).toFixed(1)}%</TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         );
@@ -296,8 +307,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
                       {data.subjects.map(subject => (
                         <TableCell key={subject}>{student[subject]}</TableCell>
                       ))}
-                      <TableCell className="font-bold">{stats?.totalMarks}</TableCell>
-                      <TableCell>{stats?.percentage}%</TableCell>
+                      <TableCell className="font-bold">{stats?.totalMarks || 0}</TableCell>
+                      <TableCell>{stats?.percentage || 0}%</TableCell>
                     </TableRow>
                   );
                 })}
@@ -315,7 +326,18 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
                     </PaginationItem>
                   )}
                   
-                  {Array.from({length: totalStudentPages}, (_, i) => i + 1).map(page => (
+                  {Array.from({length: Math.min(totalStudentPages, 5)}, (_, i) => {
+                    let pageNum;
+                    if (totalStudentPages <= 5) {
+                      pageNum = i + 1;
+                    } else {
+                      const middlePage = Math.min(Math.max(currentStudentPage, 3), totalStudentPages - 2);
+                      pageNum = middlePage - 2 + i;
+                      if (pageNum < 1) pageNum = 1;
+                      if (pageNum > totalStudentPages) pageNum = totalStudentPages;
+                    }
+                    return pageNum;
+                  }).map(page => (
                     <PaginationItem key={page}>
                       <PaginationLink 
                         isActive={page === currentStudentPage}

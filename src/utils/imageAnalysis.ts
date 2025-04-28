@@ -14,7 +14,6 @@ export interface AnalysisResult {
 }
 
 // Cache for previously analyzed images to avoid redundant processing
-// Using a more reliable cache key generation method
 const analysisCache = new Map<string, AnalysisResult>();
 
 /**
@@ -66,11 +65,14 @@ const generateCacheKey = (imageData: string): string => {
   const dataLength = imageData.length;
   let key = '';
   
-  // Sample at 10% intervals
+  // Sample at 10% intervals plus take first and last 10 chars for more uniqueness
   for (let i = 0; i < 10; i++) {
     const position = Math.floor(dataLength * (i / 10));
     key += imageData.charAt(position);
   }
+  
+  // Add beginning and end sequences to improve uniqueness
+  key += imageData.substring(0, 10) + imageData.substring(dataLength - 10);
   
   return key;
 };
@@ -78,9 +80,9 @@ const generateCacheKey = (imageData: string): string => {
 // More efficient function to generate a hash-like number from a string
 const generateSimpleHash = (str: string): number => {
   let hash = 0;
-  const strLength = Math.min(str.length, 500); // Process only first 500 chars for performance
+  const strLength = Math.min(str.length, 1000); // Process only first 1000 chars for performance
   
-  for (let i = 0; i < strLength; i += 5) { // Sample every 5th character for speed
+  for (let i = 0; i < strLength; i += 3) { // Sample every 3rd character for speed
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash; // Convert to 32bit integer
@@ -119,27 +121,31 @@ const generateMockData = (hashValue: number): AnalysisResult => {
   
   // Use the hash to select and modify student data
   // This ensures different images give different but consistent results
-  const numStudents = 15 + (hashValue % 5); // Between 15-19 students
-  const variation = (hashValue % 10) - 5; // Variation between -5 and 4
+  const numStudents = 15 + (hashValue % 6); // Between 15-20 students
   
   let students: Student[] = [];
   let totalMarks = 0;
   let totalSubjects = 0;
   let passingMarks = 0;
   
+  // Create a shuffled order based on hash to randomize which students we take for each image
+  const shuffledOrder = Array.from({length: potentialStudents.length}, (_, i) => i)
+    .sort((a, b) => ((a * hashValue) % 100) - ((b * hashValue) % 100));
+  
   // Select and modify student data
   for (let i = 0; i < numStudents; i++) {
-    const studentIndex = (hashValue + i) % potentialStudents.length;
+    const studentIndex = shuffledOrder[i % shuffledOrder.length];
     const baseStudent = potentialStudents[studentIndex];
     
-    // Create student with marks that vary slightly based on hash
+    // Create student with marks that vary based on hash
     const student: Student = { name: baseStudent.name };
     
     subjects.forEach((subject, index) => {
       // Add variation to base marks, but keep within 0-50 range
-      let mark = baseStudent.baseMarks[index] + (((hashValue + i) % 7) - 3);
-      mark = Math.max(0, Math.min(50, mark));
-      mark = parseFloat(mark.toFixed(1)); // Format to one decimal place
+      // Use different parts of the hash for different subjects to ensure more variation
+      const variationFactor = ((hashValue + (i * (index + 1))) % 11) - 5;
+      let mark = Math.max(0, Math.min(50, baseStudent.baseMarks[index] + variationFactor));
+      mark = Number(mark.toFixed(1)); // Format to one decimal place
       
       student[subject] = mark;
       
