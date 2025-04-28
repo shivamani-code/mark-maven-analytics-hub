@@ -14,8 +14,9 @@ const Index = () => {
   const [selectedOptions, setSelectedOptions] = useState<AnalysisOptionType[]>([]);
   const [customQuery, setCustomQuery] = useState<string>("");
   const [showCustomQuery, setShowCustomQuery] = useState(false);
+  const [maxMarksPerSubject, setMaxMarksPerSubject] = useState<number>(50);
 
-  const handleImageAnalyzed = useCallback((data: AnalysisResult) => {
+  const handleImageAnalyzed = useCallback((data: AnalysisResult | null) => {
     console.log("Analysis data received:", data);
     setAnalysisData(data);
     // Reset options when a new image is analyzed
@@ -34,6 +35,11 @@ const Index = () => {
     setCustomQuery(query);
   }, []);
 
+  const handleMaxMarksChange = useCallback((maxMarks: number) => {
+    console.log("Max marks set to:", maxMarks);
+    setMaxMarksPerSubject(maxMarks);
+  }, []);
+
   // Memoize components to prevent unnecessary re-renders
   const memoizedImageUploader = useMemo(() => (
     <ImageUploader onImageAnalyzed={handleImageAnalyzed} />
@@ -44,9 +50,10 @@ const Index = () => {
       <AnalysisOptions 
         onOptionsSelected={handleOptionsSelected}
         onCustomQuery={handleCustomQuery}
+        onMaxMarksChange={handleMaxMarksChange}
       />
     )
-  ), [analysisData, handleOptionsSelected, handleCustomQuery]);
+  ), [analysisData, handleOptionsSelected, handleCustomQuery, handleMaxMarksChange]);
 
   const memoizedCustomQueryInput = useMemo(() => (
     showCustomQuery && (
@@ -60,9 +67,10 @@ const Index = () => {
         data={analysisData} 
         selectedOptions={selectedOptions}
         customQuery={customQuery}
+        maxMarksPerSubject={maxMarksPerSubject}
       />
     )
-  ), [analysisData, selectedOptions, customQuery]);
+  ), [analysisData, selectedOptions, customQuery, maxMarksPerSubject]);
 
   return (
     <div className="min-h-screen pb-16">

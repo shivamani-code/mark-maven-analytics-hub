@@ -23,7 +23,7 @@ export interface StudentStatsResult {
 }
 
 // Generate a sorted list of students by total marks (toppers first)
-export const generateTopperList = (data: AnalysisResult): TopperListResult[] => {
+export const generateTopperList = (data: AnalysisResult, maxMarksPerSubject: number = 50): TopperListResult[] => {
   if (!data || !data.students || data.students.length === 0) {
     console.error("Invalid data provided to generateTopperList");
     return [];
@@ -37,7 +37,7 @@ export const generateTopperList = (data: AnalysisResult): TopperListResult[] => 
         return sum + (typeof mark === 'number' ? mark : 0);
       }, 0);
       
-      const maxPossibleMarks = subjects.length * 50; // Assuming max marks per subject is 50
+      const maxPossibleMarks = subjects.length * maxMarksPerSubject;
       const percentage = (total / maxPossibleMarks) * 100;
       
       return {
@@ -51,7 +51,7 @@ export const generateTopperList = (data: AnalysisResult): TopperListResult[] => 
 };
 
 // Generate a list of subject toppers
-export const generateSubjectToppers = (data: AnalysisResult): SubjectTopperResult[] => {
+export const generateSubjectToppers = (data: AnalysisResult, maxMarksPerSubject: number = 50): SubjectTopperResult[] => {
   if (!data || !data.subjects || data.subjects.length === 0 || !data.students || data.students.length === 0) {
     console.error("Invalid data provided to generateSubjectToppers");
     return [];
@@ -68,7 +68,7 @@ export const generateSubjectToppers = (data: AnalysisResult): SubjectTopperResul
     })[0];
     
     const marks = typeof topStudent[subject] === 'number' ? topStudent[subject] as number : 0;
-    const percentage = (marks / 50) * 100; // Assuming max marks per subject is 50
+    const percentage = (marks / maxMarksPerSubject) * 100;
     
     return {
       subject,
@@ -80,7 +80,7 @@ export const generateSubjectToppers = (data: AnalysisResult): SubjectTopperResul
 };
 
 // Calculate average marks for each subject
-export const generateAverageMarks = (data: AnalysisResult): { subject: string; average: number; percentage: number }[] => {
+export const generateAverageMarks = (data: AnalysisResult, maxMarksPerSubject: number = 50): { subject: string; average: number; percentage: number }[] => {
   if (!data || !data.subjects || data.subjects.length === 0 || !data.students || data.students.length === 0) {
     console.error("Invalid data provided to generateAverageMarks");
     return [];
@@ -93,7 +93,7 @@ export const generateAverageMarks = (data: AnalysisResult): { subject: string; a
     }, 0);
     
     const average = total / data.students.length;
-    const percentage = (average / 50) * 100; // Assuming max marks per subject is 50
+    const percentage = (average / maxMarksPerSubject) * 100;
     
     return {
       subject,
@@ -104,7 +104,7 @@ export const generateAverageMarks = (data: AnalysisResult): { subject: string; a
 };
 
 // Calculate individual student stats with percentage
-export const calculateStudentStats = (student: Student, subjects: string[]): { totalMarks: number; percentage: number } => {
+export const calculateStudentStats = (student: Student, subjects: string[], maxMarksPerSubject: number = 50): { totalMarks: number; percentage: number } => {
   if (!student || !subjects || subjects.length === 0) {
     console.error("Invalid data provided to calculateStudentStats");
     return { totalMarks: 0, percentage: 0 };
@@ -115,7 +115,7 @@ export const calculateStudentStats = (student: Student, subjects: string[]): { t
     return sum + (typeof mark === 'number' ? mark : 0);
   }, 0);
   
-  const maxPossible = subjects.length * 50; // Assuming each subject is out of 50
+  const maxPossible = subjects.length * maxMarksPerSubject;
   const percentage = (totalMarks / maxPossible) * 100;
   
   return {
@@ -125,14 +125,14 @@ export const calculateStudentStats = (student: Student, subjects: string[]): { t
 };
 
 // Generate comprehensive student statistics for all students
-export const generateAllStudentsStats = (data: AnalysisResult): StudentStatsResult[] => {
+export const generateAllStudentsStats = (data: AnalysisResult, maxMarksPerSubject: number = 50): StudentStatsResult[] => {
   if (!data || !data.students || data.students.length === 0 || !data.subjects || data.subjects.length === 0) {
     console.error("Invalid data provided to generateAllStudentsStats");
     return [];
   }
 
   return data.students.map(student => {
-    const stats = calculateStudentStats(student, data.subjects);
+    const stats = calculateStudentStats(student, data.subjects, maxMarksPerSubject);
     
     // Create a subjects record from the student object
     const subjectData: Record<string, number> = {};

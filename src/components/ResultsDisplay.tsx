@@ -34,11 +34,12 @@ interface ResultsDisplayProps {
   data: AnalysisResult;
   selectedOptions: AnalysisOptionType[];
   customQuery?: string;
+  maxMarksPerSubject?: number;
 }
 
 const COLORS = ['#8B5CF6', '#D946EF', '#0EA5E9', '#F97316', '#10B981', '#6366F1'];
 
-const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, customQuery }) => {
+const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, customQuery, maxMarksPerSubject = 50 }) => {
   const [activeFormat, setActiveFormat] = useState("chart");
   const [expandToppers, setExpandToppers] = useState(false);
   const [currentStudentPage, setCurrentStudentPage] = useState(1);
@@ -56,11 +57,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
   const getOptionData = (option: AnalysisOptionType) => {
     switch (option) {
       case 'topperList':
-        return generateTopperList(data);
+        return generateTopperList(data, maxMarksPerSubject);
       case 'averageMarks':
-        return generateAllStudentsStats(data);
+        return generateAllStudentsStats(data, maxMarksPerSubject);
       case 'subjectToppers':
-        return generateSubjectToppers(data);
+        return generateSubjectToppers(data, maxMarksPerSubject);
       case 'passPercentage':
         const passCount = Math.round(data.students.length * (data.passPercentage / 100));
         const failCount = data.students.length - passCount;
@@ -74,7 +75,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
   };
 
   const getDisplayedToppers = () => {
-    const allToppers = generateTopperList(data);
+    const allToppers = generateTopperList(data, maxMarksPerSubject);
     return expandToppers ? allToppers : allToppers.slice(0, 10);
   };
 
@@ -111,7 +112,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
             <BarChart data={optionData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="subject" />
-              <YAxis domain={[0, 50]} />
+              <YAxis domain={[0, maxMarksPerSubject]} />
               <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px' }} />
               <Legend />
               <Bar name="Marks" dataKey="marks" fill="#8B5CF6" />
@@ -300,7 +301,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
               </TableHeader>
               <TableBody>
                 {paginatedStudents.map((student, index) => {
-                  const stats = generateAllStudentsStats(data).find(s => s.name === student.name);
+                  const stats = generateAllStudentsStats(data, maxMarksPerSubject).find(s => s.name === student.name);
                   return (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{student.name}</TableCell>
@@ -406,6 +407,11 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ data, selectedOptions, 
         <p className="text-muted-foreground">
           View your selected analysis results in different formats
         </p>
+        {maxMarksPerSubject !== 50 && (
+          <p className="text-sm text-brand-purple">
+            Using {maxMarksPerSubject} as maximum marks per subject for calculations
+          </p>
+        )}
       </div>
 
       <Tabs defaultValue="chart" value={activeFormat} onValueChange={setActiveFormat}>

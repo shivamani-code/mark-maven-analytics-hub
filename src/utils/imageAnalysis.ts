@@ -1,3 +1,4 @@
+
 // This file contains the AI image analysis logic
 // In a real app, this would connect to a backend AI service
 
@@ -58,6 +59,89 @@ export const analyzeImage = async (imageData: string): Promise<AnalysisResult> =
   });
 };
 
+// Merge multiple analysis results into one comprehensive result
+export const mergeAnalysisResults = (results: AnalysisResult[]): AnalysisResult => {
+  if (!results || results.length === 0) {
+    throw new Error("No results to merge");
+  }
+  
+  if (results.length === 1) {
+    return results[0];
+  }
+  
+  // Collect all unique subjects across all results
+  const allSubjects = new Set<string>();
+  results.forEach(result => {
+    result.subjects.forEach(subject => allSubjects.add(subject));
+  });
+  
+  const subjectsArray = Array.from(allSubjects);
+  
+  // Create a map of student names to merged student objects
+  const studentMap = new Map<string, Student>();
+  
+  // Process each result
+  results.forEach(result => {
+    result.students.forEach(student => {
+      const studentName = student.name as string;
+      
+      // If this student isn't in our map yet, add them with default values for all subjects
+      if (!studentMap.has(studentName)) {
+        const newStudent: Student = { name: studentName };
+        subjectsArray.forEach(subject => {
+          newStudent[subject] = 0;
+        });
+        studentMap.set(studentName, newStudent);
+      }
+      
+      // Update this student's data with values from this result
+      const mergedStudent = studentMap.get(studentName)!;
+      result.subjects.forEach(subject => {
+        const mark = student[subject];
+        if (typeof mark === 'number') {
+          // If the subject already exists for this student, take the higher mark
+          const currentMark = mergedStudent[subject];
+          if (typeof currentMark !== 'number' || mark > currentMark) {
+            mergedStudent[subject] = mark;
+          }
+        }
+      });
+    });
+  });
+  
+  // Convert the map back to an array
+  const mergedStudents = Array.from(studentMap.values());
+  
+  // Calculate new class average and pass percentage
+  let totalMarks = 0;
+  let totalSubjects = 0;
+  let passingMarks = 0;
+  
+  mergedStudents.forEach(student => {
+    subjectsArray.forEach(subject => {
+      const mark = student[subject];
+      if (typeof mark === 'number') {
+        totalMarks += mark;
+        totalSubjects++;
+        
+        if (mark >= 20) {
+          passingMarks++;
+        }
+      }
+    });
+  });
+  
+  const classAverage = totalSubjects > 0 ? parseFloat((totalMarks / totalSubjects).toFixed(1)) : 0;
+  const passPercentage = totalSubjects > 0 ? parseFloat(((passingMarks / totalSubjects) * 100).toFixed(1)) : 0;
+  
+  return {
+    students: mergedStudents,
+    subjects: subjectsArray,
+    classAverage,
+    passPercentage
+  };
+};
+
 // Generate a unique cache key for the image
 const generateCacheKey = (imageData: string): string => {
   // Create a more unique identifier for the image
@@ -116,12 +200,17 @@ const generateMockData = (hashValue: number): AnalysisResult => {
     { name: "JAKKULA RAJESHWAR", baseMarks: [32, 30, 25, 28] },
     { name: "KADARI MAHESH", baseMarks: [29, 31, 24, 27] },
     { name: "KAMPA POOJITHA", baseMarks: [37, 36, 32, 33] },
-    { name: "KUNCHALA SRINIVAS", baseMarks: [31, 29, 23, 26] }
+    { name: "KUNCHALA SRINIVAS", baseMarks: [31, 29, 23, 26] },
+    { name: "PRAVALLIKA REDDY", baseMarks: [38, 37, 36, 35] },
+    { name: "RAHUL SHARMA", baseMarks: [33, 35, 30, 29] },
+    { name: "PRIYA PATEL", baseMarks: [36, 34, 32, 30] },
+    { name: "ARJUN MEHTA", baseMarks: [29, 33, 28, 31] },
+    { name: "DEEPIKA VERMA", baseMarks: [35, 36, 31, 32] }
   ];
   
   // Use the hash to select and modify student data
   // This ensures different images give different but consistent results
-  const numStudents = 15 + (hashValue % 6); // Between 15-20 students
+  const numStudents = 15 + (hashValue % 11); // Between 15-25 students
   
   let students: Student[] = [];
   let totalMarks = 0;
@@ -143,7 +232,7 @@ const generateMockData = (hashValue: number): AnalysisResult => {
     subjects.forEach((subject, index) => {
       // Add variation to base marks, but keep within 0-50 range
       // Use different parts of the hash for different subjects to ensure more variation
-      const variationFactor = ((hashValue + (i * (index + 1))) % 11) - 5;
+      const variationFactor = ((hashValue + (i * (index + 1) * 13)) % 21) - 10;
       let mark = Math.max(0, Math.min(50, baseStudent.baseMarks[index] + variationFactor));
       mark = Number(mark.toFixed(1)); // Format to one decimal place
       
