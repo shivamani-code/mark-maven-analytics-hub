@@ -5,34 +5,16 @@ import BackgroundAnimation from "@/components/BackgroundAnimation";
 import ImageUploader from "@/components/ImageUploader";
 import AnalysisOptions, { AnalysisOptionType } from "@/components/AnalysisOptions";
 import ResultsDisplay from "@/components/ResultsDisplay";
-import CustomQueryInput from "@/components/CustomQueryInput";
 import { ArrowDown } from "lucide-react";
 import { AnalysisResult } from "@/utils/imageAnalysis";
 
 const Index = () => {
   const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null);
-  const [selectedOptions, setSelectedOptions] = useState<AnalysisOptionType[]>([]);
-  const [customQuery, setCustomQuery] = useState<string>("");
-  const [showCustomQuery, setShowCustomQuery] = useState(false);
   const [maxMarksPerSubject, setMaxMarksPerSubject] = useState<number>(50);
 
   const handleImageAnalyzed = useCallback((data: AnalysisResult | null) => {
     console.log("Analysis data received:", data);
     setAnalysisData(data);
-    // Reset options when a new image is analyzed
-    setSelectedOptions([]);
-    setShowCustomQuery(false);
-  }, []);
-
-  const handleOptionsSelected = useCallback((options: AnalysisOptionType[]) => {
-    console.log("Options selected:", options);
-    setSelectedOptions(options);
-    setShowCustomQuery(options.includes("custom"));
-  }, []);
-
-  const handleCustomQuery = useCallback((query: string) => {
-    console.log("Custom query set:", query);
-    setCustomQuery(query);
   }, []);
 
   const handleMaxMarksChange = useCallback((maxMarks: number) => {
@@ -48,29 +30,21 @@ const Index = () => {
   const memoizedAnalysisOptions = useMemo(() => (
     analysisData && (
       <AnalysisOptions 
-        onOptionsSelected={handleOptionsSelected}
-        onCustomQuery={handleCustomQuery}
+        onOptionsSelected={() => {}} // Simplified as we're not using options
         onMaxMarksChange={handleMaxMarksChange}
       />
     )
-  ), [analysisData, handleOptionsSelected, handleCustomQuery, handleMaxMarksChange]);
-
-  const memoizedCustomQueryInput = useMemo(() => (
-    showCustomQuery && (
-      <CustomQueryInput onSubmitQuery={handleCustomQuery} />
-    )
-  ), [showCustomQuery, handleCustomQuery]);
+  ), [analysisData, handleMaxMarksChange]);
 
   const memoizedResultsDisplay = useMemo(() => (
-    analysisData && selectedOptions.length > 0 && (
+    analysisData && (
       <ResultsDisplay 
         data={analysisData} 
-        selectedOptions={selectedOptions}
-        customQuery={customQuery}
+        selectedOptions={[]} // Empty as we're not using options
         maxMarksPerSubject={maxMarksPerSubject}
       />
     )
-  ), [analysisData, selectedOptions, customQuery, maxMarksPerSubject]);
+  ), [analysisData, maxMarksPerSubject]);
 
   return (
     <div className="min-h-screen pb-16">
@@ -90,7 +64,6 @@ const Index = () => {
         )}
         
         {memoizedAnalysisOptions}
-        {memoizedCustomQueryInput}
         {memoizedResultsDisplay}
       </main>
     </div>

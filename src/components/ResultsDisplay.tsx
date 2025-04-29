@@ -5,10 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartBarIcon, TableIcon, FileText } from "lucide-react";
 import { AnalysisOptionType } from "./AnalysisOptions";
 import { AnalysisResult } from "@/utils/imageAnalysis";
-import { generateAllStudentsStats } from "@/utils/dataFormatting";
-import StudentsTable from "./results/StudentsTable";
-import ResultSection from "./results/ResultSection";
-import ExportControls from "./results/ExportControls";
+import { generateTopperList } from "@/utils/dataFormatting";
+import TopperListResults from "./results/TopperListResults";
 import PassPercentageConfig from "./PassPercentageConfig";
 
 interface ResultsDisplayProps {
@@ -20,8 +18,6 @@ interface ResultsDisplayProps {
 
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ 
   data, 
-  selectedOptions, 
-  customQuery, 
   maxMarksPerSubject = 50 
 }) => {
   const [activeFormat, setActiveFormat] = useState("chart");
@@ -37,12 +33,14 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
     );
   }
 
+  const toppersList = generateTopperList(data, maxMarksPerSubject, passPercentage);
+
   return (
     <Card className="p-6 animate-fade-in-up">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Analysis Results</h2>
+        <h2 className="text-2xl font-bold mb-2">Students Ranking</h2>
         <p className="text-muted-foreground">
-          View your selected analysis results in different formats
+          Students ranked by their total marks
         </p>
         {maxMarksPerSubject !== 50 && (
           <p className="text-sm text-brand-purple">
@@ -70,65 +68,40 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
               <FileText className="h-4 w-4 mr-2" /> Text
             </TabsTrigger>
           </TabsList>
-          
-          <ExportControls 
-            data={data} 
-            selectedOptions={selectedOptions} 
-            customQuery={customQuery} 
-          />
         </div>
 
         <TabsContent value="chart">
-          {selectedOptions.map((option) => (
-            <ResultSection 
-              key={option} 
-              option={option} 
-              data={data} 
+          <div className="border rounded-md p-4">
+            <h3 className="text-xl font-semibold mb-4 text-gradient-brand">Toppers List</h3>
+            <TopperListResults 
+              data={toppersList} 
               format="chart" 
-              customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject}
               passPercentage={passPercentage}
             />
-          ))}
+          </div>
         </TabsContent>
         
         <TabsContent value="table">
-          {selectedOptions.map((option) => (
-            <ResultSection 
-              key={option} 
-              option={option} 
-              data={data} 
+          <div className="border rounded-md p-4">
+            <h3 className="text-xl font-semibold mb-4 text-gradient-brand">Toppers List</h3>
+            <TopperListResults 
+              data={toppersList} 
               format="table" 
-              customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject}
               passPercentage={passPercentage}
             />
-          ))}
+          </div>
         </TabsContent>
         
         <TabsContent value="text">
-          {selectedOptions.map((option) => (
-            <ResultSection 
-              key={option} 
-              option={option} 
-              data={data} 
+          <div className="border rounded-md p-4">
+            <h3 className="text-xl font-semibold mb-4 text-gradient-brand">Toppers List</h3>
+            <TopperListResults 
+              data={toppersList} 
               format="text" 
-              customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject}
               passPercentage={passPercentage}
             />
-          ))}
+          </div>
         </TabsContent>
-        
-        {/* Always display the students table at the bottom */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4 text-gradient-brand">All Students Data</h3>
-          <StudentsTable 
-            data={data} 
-            maxMarksPerSubject={maxMarksPerSubject}
-            passPercentage={passPercentage} 
-          />
-        </div>
       </Tabs>
     </Card>
   );
