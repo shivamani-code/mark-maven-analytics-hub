@@ -13,10 +13,11 @@ interface ResultSectionProps {
   format: string;
   customQuery?: string;
   maxMarksPerSubject: number;
+  passPercentage?: number;
 }
 
 const ResultSection: React.FC<ResultSectionProps> = ({ 
-  option, data, format, customQuery, maxMarksPerSubject 
+  option, data, format, customQuery, maxMarksPerSubject, passPercentage = 40
 }) => {
   const getOptionTitle = () => {
     switch(option) {
@@ -28,6 +29,21 @@ const ResultSection: React.FC<ResultSectionProps> = ({
       default: return '';
     }
   };
+
+  if (!data || !data.students || data.students.length === 0) {
+    return (
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-4 text-gradient-brand">
+          {getOptionTitle()}
+        </h3>
+        <div className="border rounded-md">
+          <div className="p-4 text-center text-muted-foreground">
+            No data available for this analysis option.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderOptionContent = () => {
     if (option === 'custom') {
@@ -47,8 +63,9 @@ const ResultSection: React.FC<ResultSectionProps> = ({
     switch (option) {
       case 'topperList':
         return <TopperListResults 
-                 data={generateTopperList(data, maxMarksPerSubject)} 
-                 format={format} 
+                 data={generateTopperList(data, maxMarksPerSubject, passPercentage)} 
+                 format={format}
+                 passPercentage={passPercentage}
                />;
       case 'subjectToppers':
         return <SubjectToppersResults 
@@ -59,7 +76,8 @@ const ResultSection: React.FC<ResultSectionProps> = ({
       case 'passPercentage':
         return <PassPercentageResults 
                  data={data} 
-                 format={format} 
+                 format={format}
+                 passPercentage={passPercentage} 
                />;
       default:
         return null;

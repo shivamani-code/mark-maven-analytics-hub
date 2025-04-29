@@ -6,6 +6,7 @@ export interface TopperListResult {
   total: number;
   average: number;
   percentage: number;
+  passing: boolean;
 }
 
 export interface SubjectTopperResult {
@@ -20,10 +21,15 @@ export interface StudentStatsResult {
   subjects: Record<string, number>;
   totalMarks: number;
   percentage: number;
+  passing: boolean;
 }
 
 // Generate a sorted list of students by total marks (toppers first)
-export const generateTopperList = (data: AnalysisResult, maxMarksPerSubject: number = 50): TopperListResult[] => {
+export const generateTopperList = (
+  data: AnalysisResult, 
+  maxMarksPerSubject: number = 50, 
+  passPercentage: number = 40
+): TopperListResult[] => {
   if (!data || !data.students || data.students.length === 0) {
     console.error("Invalid data provided to generateTopperList");
     return [];
@@ -39,12 +45,14 @@ export const generateTopperList = (data: AnalysisResult, maxMarksPerSubject: num
       
       const maxPossibleMarks = subjects.length * maxMarksPerSubject;
       const percentage = maxPossibleMarks > 0 ? (total / maxPossibleMarks) * 100 : 0;
+      const passing = percentage >= passPercentage;
       
       return {
         name: student.name as string,
         total,
         average: parseFloat((total / (subjects.length || 1)).toFixed(2)),
-        percentage: parseFloat(percentage.toFixed(1))
+        percentage: parseFloat(percentage.toFixed(1)),
+        passing
       };
     })
     .sort((a, b) => b.total - a.total);
@@ -104,10 +112,15 @@ export const generateAverageMarks = (data: AnalysisResult, maxMarksPerSubject: n
 };
 
 // Calculate individual student stats with percentage
-export const calculateStudentStats = (student: Student, subjects: string[], maxMarksPerSubject: number = 50): { totalMarks: number; percentage: number } => {
+export const calculateStudentStats = (
+  student: Student, 
+  subjects: string[], 
+  maxMarksPerSubject: number = 50,
+  passPercentage: number = 40
+): { totalMarks: number; percentage: number; passing: boolean } => {
   if (!student || !subjects || subjects.length === 0) {
     console.error("Invalid data provided to calculateStudentStats");
-    return { totalMarks: 0, percentage: 0 };
+    return { totalMarks: 0, percentage: 0, passing: false };
   }
 
   const totalMarks = subjects.reduce((sum, subject) => {
@@ -117,22 +130,28 @@ export const calculateStudentStats = (student: Student, subjects: string[], maxM
   
   const maxPossible = subjects.length * maxMarksPerSubject;
   const percentage = maxPossible > 0 ? (totalMarks / maxPossible) * 100 : 0;
+  const passing = percentage >= passPercentage;
   
   return {
     totalMarks,
-    percentage: parseFloat(percentage.toFixed(1))
+    percentage: parseFloat(percentage.toFixed(1)),
+    passing
   };
 };
 
 // Generate comprehensive student statistics for all students
-export const generateAllStudentsStats = (data: AnalysisResult, maxMarksPerSubject: number = 50): StudentStatsResult[] => {
+export const generateAllStudentsStats = (
+  data: AnalysisResult, 
+  maxMarksPerSubject: number = 50,
+  passPercentage: number = 40
+): StudentStatsResult[] => {
   if (!data || !data.students || data.students.length === 0 || !data.subjects || data.subjects.length === 0) {
     console.error("Invalid data provided to generateAllStudentsStats");
     return [];
   }
 
   return data.students.map(student => {
-    const stats = calculateStudentStats(student, data.subjects, maxMarksPerSubject);
+    const stats = calculateStudentStats(student, data.subjects, maxMarksPerSubject, passPercentage);
     
     // Create a subjects record from the student object
     const subjectData: Record<string, number> = {};
@@ -145,7 +164,8 @@ export const generateAllStudentsStats = (data: AnalysisResult, maxMarksPerSubjec
       name: student.name as string,
       subjects: subjectData,
       totalMarks: stats.totalMarks,
-      percentage: stats.percentage
+      percentage: stats.percentage,
+      passing: stats.passing
     };
   }).sort((a, b) => b.totalMarks - a.totalMarks); // Sort by total marks
 };

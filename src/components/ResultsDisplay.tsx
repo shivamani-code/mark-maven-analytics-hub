@@ -9,6 +9,7 @@ import { generateAllStudentsStats } from "@/utils/dataFormatting";
 import StudentsTable from "./results/StudentsTable";
 import ResultSection from "./results/ResultSection";
 import ExportControls from "./results/ExportControls";
+import PassPercentageConfig from "./PassPercentageConfig";
 
 interface ResultsDisplayProps {
   data: AnalysisResult;
@@ -24,6 +25,17 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   maxMarksPerSubject = 50 
 }) => {
   const [activeFormat, setActiveFormat] = useState("chart");
+  const [passPercentage, setPassPercentage] = useState(40); // Default pass percentage threshold
+
+  if (!data || !data.students || data.students.length === 0) {
+    return (
+      <Card className="p-6 animate-fade-in-up">
+        <div className="text-center text-muted-foreground">
+          No data available for analysis.
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 animate-fade-in-up">
@@ -38,6 +50,12 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
           </p>
         )}
       </div>
+
+      {/* Pass percentage configuration slider */}
+      <PassPercentageConfig 
+        value={passPercentage} 
+        onChange={setPassPercentage} 
+      />
 
       <Tabs defaultValue="chart" value={activeFormat} onValueChange={setActiveFormat}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
@@ -68,7 +86,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
               data={data} 
               format="chart" 
               customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject} 
+              maxMarksPerSubject={maxMarksPerSubject}
+              passPercentage={passPercentage}
             />
           ))}
         </TabsContent>
@@ -81,7 +100,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
               data={data} 
               format="table" 
               customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject} 
+              maxMarksPerSubject={maxMarksPerSubject}
+              passPercentage={passPercentage}
             />
           ))}
         </TabsContent>
@@ -94,7 +114,8 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
               data={data} 
               format="text" 
               customQuery={customQuery} 
-              maxMarksPerSubject={maxMarksPerSubject} 
+              maxMarksPerSubject={maxMarksPerSubject}
+              passPercentage={passPercentage}
             />
           ))}
         </TabsContent>
@@ -102,15 +123,10 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
         {/* Always display the students table at the bottom */}
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4 text-gradient-brand">All Students Data</h3>
-          <StudentsTable data={data} maxMarksPerSubject={maxMarksPerSubject} />
-        </div>
-        
-        {/* Bottom export controls */}
-        <div className="mt-8">
-          <ExportControls 
+          <StudentsTable 
             data={data} 
-            selectedOptions={selectedOptions} 
-            customQuery={customQuery} 
+            maxMarksPerSubject={maxMarksPerSubject}
+            passPercentage={passPercentage} 
           />
         </div>
       </Tabs>

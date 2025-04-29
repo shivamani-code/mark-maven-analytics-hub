@@ -15,6 +15,14 @@ interface SubjectToppersResultsProps {
 const SubjectToppersResults: React.FC<SubjectToppersResultsProps> = ({ 
   data, format, maxMarksPerSubject 
 }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        No data available for subject toppers.
+      </div>
+    );
+  }
+
   if (format === 'chart') {
     return (
       <ResponsiveContainer width="100%" height={300}>
