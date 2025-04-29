@@ -27,13 +27,19 @@ interface AnalysisOptionsProps {
   onMaxMarksChange?: (maxMarks: number) => void;
 }
 
-const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ onOptionsSelected, onCustomQuery, onMaxMarksChange }) => {
+const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ 
+  onOptionsSelected, 
+  onCustomQuery, 
+  onMaxMarksChange 
+}) => {
   const [selectedOptions, setSelectedOptions] = useState<AnalysisOptionType[]>([]);
   const [showOptions, setShowOptions] = useState(true);
   const [customQuery, setCustomQuery] = useState("");
   const [isCustomSelected, setIsCustomSelected] = useState(false);
   const [maxMarksPerSubject, setMaxMarksPerSubject] = useState<number>(50);
-  const [showMaxMarksInput, setShowMaxMarksInput] = useState(false);
+  
+  // Always show max marks input for better user experience
+  const [showMaxMarksInput, setShowMaxMarksInput] = useState(true);
 
   const options: AnalysisOption[] = [
     {
@@ -68,9 +74,6 @@ const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ onOptionsSelected, on
       : [...selectedOptions, optionId];
     
     setSelectedOptions(newSelectedOptions);
-    
-    // Show max marks input if "averageMarks" is selected
-    setShowMaxMarksInput(newSelectedOptions.includes("averageMarks"));
   };
 
   const toggleCustomOption = () => {
@@ -119,6 +122,27 @@ const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ onOptionsSelected, on
       
       {showOptions && (
         <>
+          {/* Max Marks Per Subject input - always shown for better user experience */}
+          <div className="p-3 rounded-md border border-primary/10 bg-muted/40 mb-4">
+            <Label htmlFor="max-marks" className="text-sm font-medium mb-1 block">
+              Maximum marks per subject
+            </Label>
+            <div className="flex items-center gap-2">
+              <Input 
+                id="max-marks"
+                type="number" 
+                min="1"
+                max="100"
+                value={maxMarksPerSubject}
+                onChange={(e) => handleMaxMarksChange(e.target.value)}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">
+                Used to calculate percentages correctly
+              </span>
+            </div>
+          </div>
+        
           <div className="space-y-3 mb-6">
             {options.map((option) => (
               <div 
@@ -147,29 +171,6 @@ const AnalysisOptions: React.FC<AnalysisOptionsProps> = ({ onOptionsSelected, on
                 )}
               </div>
             ))}
-            
-            {/* Max Marks Per Subject input - shows only when All Students Performance is selected */}
-            {showMaxMarksInput && (
-              <div className="p-3 rounded-md border border-primary/10 bg-muted/40 mt-2">
-                <Label htmlFor="max-marks" className="text-sm font-medium mb-1 block">
-                  Maximum marks per subject
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input 
-                    id="max-marks"
-                    type="number" 
-                    min="1"
-                    max="100"
-                    value={maxMarksPerSubject}
-                    onChange={(e) => handleMaxMarksChange(e.target.value)}
-                    className="w-24"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    Used to calculate percentages correctly
-                  </span>
-                </div>
-              </div>
-            )}
             
             {/* Custom query option */}
             <div 

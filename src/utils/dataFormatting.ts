@@ -38,12 +38,12 @@ export const generateTopperList = (data: AnalysisResult, maxMarksPerSubject: num
       }, 0);
       
       const maxPossibleMarks = subjects.length * maxMarksPerSubject;
-      const percentage = (total / maxPossibleMarks) * 100;
+      const percentage = maxPossibleMarks > 0 ? (total / maxPossibleMarks) * 100 : 0;
       
       return {
         name: student.name as string,
         total,
-        average: parseFloat((total / subjects.length).toFixed(2)),
+        average: parseFloat((total / (subjects.length || 1)).toFixed(2)),
         percentage: parseFloat(percentage.toFixed(1))
       };
     })
@@ -68,7 +68,7 @@ export const generateSubjectToppers = (data: AnalysisResult, maxMarksPerSubject:
     })[0];
     
     const marks = typeof topStudent[subject] === 'number' ? topStudent[subject] as number : 0;
-    const percentage = (marks / maxMarksPerSubject) * 100;
+    const percentage = maxMarksPerSubject > 0 ? (marks / maxMarksPerSubject) * 100 : 0;
     
     return {
       subject,
@@ -93,7 +93,7 @@ export const generateAverageMarks = (data: AnalysisResult, maxMarksPerSubject: n
     }, 0);
     
     const average = total / data.students.length;
-    const percentage = (average / maxMarksPerSubject) * 100;
+    const percentage = maxMarksPerSubject > 0 ? (average / maxMarksPerSubject) * 100 : 0;
     
     return {
       subject,
@@ -116,7 +116,7 @@ export const calculateStudentStats = (student: Student, subjects: string[], maxM
   }, 0);
   
   const maxPossible = subjects.length * maxMarksPerSubject;
-  const percentage = (totalMarks / maxPossible) * 100;
+  const percentage = maxPossible > 0 ? (totalMarks / maxPossible) * 100 : 0;
   
   return {
     totalMarks,
