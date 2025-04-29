@@ -65,14 +65,14 @@ const TopperListResults: React.FC<TopperListResultsProps> = ({
             name="Total Marks" 
             dataKey="total" 
             fill="#8884d8" 
-            stroke={(data) => data.passing ? "#10B981" : "#EF4444"}
+            stroke="#000"
             strokeWidth={2}
           />
           <Bar 
             name="Percentage" 
             dataKey="percentage" 
             fill="#82ca9d"
-            stroke={(data) => data.passing ? "#10B981" : "#EF4444"}
+            stroke="#000"
             strokeWidth={2}
           />
         </BarChart>
